@@ -24,7 +24,7 @@ const app = express()
 
 app.use(bunyanMiddleware({ logger }))
 
-app.get('/generate', function (req, res) {
+app.get('/generate', (req, res) => {
   const worker = new Worker(__dirname + '/worker.js')
   worker.on('message', (hash) => {
     res.send(`${hash}`)
@@ -40,7 +40,7 @@ app.get('/generate', function (req, res) {
   worker.postMessage(req.query.value);
 })
 
-app.get('/health', function (req, res) {
+app.get('/health', (req, res) => {
   res.send({ status: "healthy" })
 })
 
