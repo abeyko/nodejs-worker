@@ -1,9 +1,9 @@
-const express = require("express")
-const bcrypt = require("bcrypt")
+const express = require('express')
 const path = require("path")
 const { createLogger } = require("bunyan")
 const bunyanMiddleware = require("bunyan-middleware")
 const bunyanDebugStream = require("bunyan-debug-stream")
+const { Worker } = require('worker_threads')
 
 const logger = createLogger({
   name: "interview",
@@ -24,12 +24,23 @@ const app = express()
 
 app.use(bunyanMiddleware({ logger }))
 
-app.get("/generate", (req, res) => {
-  const hash = bcrypt.hashSync(req.query.value, 16)
-  res.send({ hash })
+app.get('/generate', function (req, res) {
+  const worker = new Worker(__dirname + '/worker.js')
+  worker.on('message', (hash) => {
+    res.send(`${hash}`)
+  });
+  worker.on('error', (err) => {
+    res.status({ status: 500 }).json({ message: err.message })
+  });
+  worker.on('exit', (code) => {
+    if (code !== 0) {
+      res.status({ status: 500 }).json({ message: code })
+    }
+  })
+  worker.postMessage(req.query.value);
 })
 
-app.get("/health", (req, res) => {
+app.get('/health', function (req, res) {
   res.send({ status: "healthy" })
 })
 
